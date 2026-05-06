@@ -1,113 +1,80 @@
 # Solution Documentation
 
-**Candidate Name:** [Your Name]  
-**Completion Date:** [Date]
+## Problems Identified (top 3) and Fixes
+1. Tight coupling and mixed responsibilities
+   - Problem: Controllers instantiate concrete services and `TodoService` mixes business logic with data access.
+   - Fix: Introduce `ITodoService` and `ITodoRepository`; move DB access into `SqliteTodoRepository`; inject `ITodoService` into controllers via DI.
 
----
+2. SQL injection and unsafe data access
+   - Problem: Inline SQL with string interpolation risks SQL injection and is hard to maintain.
+   - Fix: Use parameterized queries (async ADO.NET, Dapper or EF Core). Move connection string to `appsettings.json` and use `IConfiguration` to bind it.
 
-## Problems Identified
-
-_Describe the issues you found in the original implementation. Consider aspects like:_
-- Architecture and design patterns
-- Code quality and maintainability
-- Security vulnerabilities
-- Performance concerns
-- Testing gaps
-
-[Your analysis here]
-
----
+3. Poor testability and brittle tests
+   - Problem: Tests and controllers depend on concrete classes and the real DB.
+   - Fix: Depend on abstractions (`ITodoService`/`ITodoRepository`) so tests can mock those interfaces. Use in-memory SQLite for integration tests.
 
 ## Architectural Decisions
-
-_Explain the architecture you chose and why. Consider:_
-- Design patterns applied
-- Project structure changes
-- Technology choices
-- Separation of concerns
-
-[Your decisions here]
-
----
-
-## Trade-offs
-
-_Discuss compromises you made and the reasoning behind them. Consider:_
-- What did you prioritize?
-- What did you defer or simplify?
-- What alternatives did you consider?
-
-[Your trade-offs here]
-
----
+- Layered architecture: API (controllers) → Service (business rules) → Repository (data access).
+- Patterns used:
+  - Repository pattern for DB encapsulation (`ITodoRepository` / `SqliteTodoRepository`).
+  - DI (built-in ASP.NET Core) for `ITodoService` / `ITodoRepository` registrations in `Program.cs`.
+  - DTOs + model validation for API surface separation.
+- Why:
+  - Improves testability, single responsibility, and makes swapping data stores trivial.
+  - Enables safe parameterized queries and centralized configuration.
 
 ## How to Run
+Prerequisites
+- .NET 8 SDK
+- Visual Studio 2026 or CLI (PowerShell preferred)
 
-### Prerequisites
-[List required software, versions, etc.]
+Build
+- From repository root:
+  - `dotnet build ./TodoApi`
 
-### Build
-```bash
-# Add your build commands
-```
+Run
+- CLI:
+  - `dotnet run --project ./TodoApi`
+- Visual Studio:
+  - Use `__Debug > Start Debugging__` or `__Debug > Start Without Debugging__`
 
-### Run
-```bash
-# Add your run commands
-```
+Notes
+- Move DB connection string to `appsettings.json` before running; app creates `todos.db` on first run for SQLite.
 
-### Test
-```bash
-# Add your test commands
-```
+Test
+- From repository root:
+  - `dotnet test`
 
----
+## API Documentation (recommended RESTful routes)
+Base path: `/api/todos`
 
-## API Documentation
+1. Create TODO
+   - Method: POST
+   - URL: `/api/todos`
+   - Request Body: `{"task":"Learn ASP.NET Core","dueDate":"2023-12-31","isCompleted":false}`
+   - Response: `201 Created`
 
-### Endpoints
+2. Get TODO(s)
+   - Method: GET
+   - URL: `/api/todos` or `/api/todos/{id}`
+   - Request: N/A or URL parameter (e.g., `/api/todos/1`)
+   - Response: `200 OK` with TODO item(s) in body
 
-#### Create TODO
-```
-Method: [HTTP method]
-URL: [endpoint]
-Request Body: [example]
-Response: [example]
-```
+3. Update TODO
+   - Method: PUT
+   - URL: `/api/todos/{id}`
+   - Request Body: `{"task":"Learn ASP.NET Core Updated","dueDate":"2023-12-31","isCompleted":true}`
+   - Response: `204 No Content`
 
-#### Get TODO(s)
-```
-Method: [HTTP method]
-URL: [endpoint]
-Request: [example]
-Response: [example]
-```
-
-#### Update TODO
-```
-Method: [HTTP method]
-URL: [endpoint]
-Request Body: [example]
-Response: [example]
-```
-
-#### Delete TODO
-```
-Method: [HTTP method]
-URL: [endpoint]
-Request: [example]
-Response: [example]
-```
-
----
+4. Delete TODO
+   - Method: DELETE
+   - URL: `/api/todos/{id}`
+   - Request: URL parameter (e.g., `/api/todos/1`)
+   - Response: `204 No Content`
 
 ## Future Improvements
-
-_What would you do if you had more time? Consider:_
-- Additional features
-- Performance optimizations
-- Enhanced testing
-- Better documentation
-- Deployment considerations
-
-[Your ideas here]
+- Enhance authentication and authorization
+- Implement rate limiting and caching
+- Improve API documentation and examples
+- Add support for user-specific TODO lists
+- Enable deployment to cloud platforms with CI/CD
