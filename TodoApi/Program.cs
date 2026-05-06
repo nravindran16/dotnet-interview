@@ -1,4 +1,6 @@
 using Microsoft.Data.Sqlite;
+using TodoApi.Repositories;
+using TodoApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,9 +10,15 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Register DI
+builder.Services.AddScoped<ITodoRepository, SqliteTodoRepository>();
+builder.Services.AddScoped<ITodoService, TodoService>();
+
 var app = builder.Build();
 
-InitializeDatabase();
+// Initialize database schema (minimal)
+InitializeDatabase(app.Configuration.GetConnectionString("TodoDatabase") ?? "Data Source=todos.db");
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -27,9 +35,8 @@ app.MapControllers();
 
 app.Run();
 
-void InitializeDatabase()
+void InitializeDatabase(string connectionString)
 {
-    var connectionString = "Data Source=todos.db";
     using var connection = new SqliteConnection(connectionString);
     connection.Open();
 
