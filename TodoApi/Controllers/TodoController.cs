@@ -16,11 +16,11 @@ namespace TodoApi.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateTodo([FromBody] Todo todo)
+        public async Task<IActionResult> CreateTodo([FromBody] Todo todo)
         {
             try
             {
-                var result = _todoService.CreateTodo(todo);
+                var result = await _todoService.CreateTodoAsync(todo);
                 return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
             }
             catch (Exception ex)
@@ -30,19 +30,19 @@ namespace TodoApi.Controllers
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var todo = _todoService.GetTodoById(id);
+            var todo = await _todoService.GetTodoByIdAsync(id);
             if (todo == null) return NotFound();
             return Ok(todo);
         }
 
         [HttpGet]
-        public IActionResult GetTodo()
+        public async Task<IActionResult> GetTodo()
         {
             try
             {
-                var todos = _todoService.GetAllTodos();
+                var todos = await _todoService.GetAllTodosAsync();
                 return Ok(todos);
             }
             catch (Exception ex)
@@ -52,11 +52,11 @@ namespace TodoApi.Controllers
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdateTodo(int id, [FromBody] UpdateTodoRequest request)
+        public async Task<IActionResult> UpdateTodo(int id, [FromBody] UpdateTodoRequest request)
         {
             try
             {
-                var existingTodo = _todoService.GetTodoById(id);
+                var existingTodo = await _todoService.GetTodoByIdAsync(id);
                 if (existingTodo == null)
                 {
                     return NotFound();
@@ -69,7 +69,7 @@ namespace TodoApi.Controllers
                     IsCompleted = request.IsCompleted
                 };
 
-                var result = _todoService.UpdateTodo(id, todo);
+                var result = await _todoService.UpdateTodoAsync(id, todo);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -79,11 +79,11 @@ namespace TodoApi.Controllers
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteTodo(int id)
+        public async Task<IActionResult> DeleteTodo(int id)
         {
             try
             {
-                var result = _todoService.DeleteTodo(id);
+                var result = await _todoService.DeleteTodoAsync(id);
                 if (result)
                 {
                     return Ok(new { message = "Todo deleted successfully" });

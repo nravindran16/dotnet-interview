@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using TodoApi.Models;
@@ -14,33 +15,33 @@ namespace TodoApi.Repositories
             _connectionString = configuration.GetConnectionString("TodoDatabase") ?? "Data Source=todos.db";
         }
 
-        public int Insert(Todo todo)
+        public async Task<int> InsertAsync(Todo todo)
         {
-            using var connection = new SqliteConnection(_connectionString);
-            connection.Open();
+            await using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
 
-            using var command = connection.CreateCommand();
+            await using var command = connection.CreateCommand();
             command.CommandText = @"INSERT INTO Todos (Title, Description, IsCompleted, CreatedAt) VALUES ($title, $description, $isCompleted, $createdAt); SELECT last_insert_rowid();";
             command.Parameters.AddWithValue("$title", todo.Title ?? string.Empty);
             command.Parameters.AddWithValue("$description", todo.Description ?? string.Empty);
             command.Parameters.AddWithValue("$isCompleted", todo.IsCompleted ? 1 : 0);
             command.Parameters.AddWithValue("$createdAt", DateTime.UtcNow.ToString("o"));
 
-            var id = Convert.ToInt32(command.ExecuteScalar());
-            return id;
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result);
         }
 
-        public List<Todo> GetAll()
+        public async Task<List<Todo>> GetAllAsync()
         {
             var todos = new List<Todo>();
-            using var connection = new SqliteConnection(_connectionString);
-            connection.Open();
+            await using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
 
-            using var command = connection.CreateCommand();
+            await using var command = connection.CreateCommand();
             command.CommandText = "SELECT Id, Title, Description, IsCompleted, CreatedAt FROM Todos";
 
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
+            await using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
             {
                 todos.Add(new Todo
                 {
@@ -55,17 +56,17 @@ namespace TodoApi.Repositories
             return todos;
         }
 
-        public Todo? GetById(int id)
+        public async Task<Todo?> GetByIdAsync(int id)
         {
-            using var connection = new SqliteConnection(_connectionString);
-            connection.Open();
+            await using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
 
-            using var command = connection.CreateCommand();
+            await using var command = connection.CreateCommand();
             command.CommandText = "SELECT Id, Title, Description, IsCompleted, CreatedAt FROM Todos WHERE Id = $id";
             command.Parameters.AddWithValue("$id", id);
 
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
+            await using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
             {
                 return new Todo
                 {
@@ -80,31 +81,31 @@ namespace TodoApi.Repositories
             return null;
         }
 
-        public int Update(int id, Todo todo)
+        public async Task<int> UpdateAsync(int id, Todo todo)
         {
-            using var connection = new SqliteConnection(_connectionString);
-            connection.Open();
+            await using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
 
-            using var command = connection.CreateCommand();
+            await using var command = connection.CreateCommand();
             command.CommandText = @"UPDATE Todos SET Title = $title, Description = $description, IsCompleted = $isCompleted WHERE Id = $id";
             command.Parameters.AddWithValue("$title", todo.Title ?? string.Empty);
             command.Parameters.AddWithValue("$description", todo.Description ?? string.Empty);
             command.Parameters.AddWithValue("$isCompleted", todo.IsCompleted ? 1 : 0);
             command.Parameters.AddWithValue("$id", id);
 
-            return command.ExecuteNonQuery();
+            return await command.ExecuteNonQueryAsync();
         }
 
-        public int Delete(int id)
+        public async Task<int> DeleteAsync(int id)
         {
-            using var connection = new SqliteConnection(_connectionString);
-            connection.Open();
+            await using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
 
-            using var command = connection.CreateCommand();
+            await using var command = connection.CreateCommand();
             command.CommandText = "DELETE FROM Todos WHERE Id = $id";
             command.Parameters.AddWithValue("$id", id);
 
-            return command.ExecuteNonQuery();
+            return await command.ExecuteNonQueryAsync();
         }
     }
 }

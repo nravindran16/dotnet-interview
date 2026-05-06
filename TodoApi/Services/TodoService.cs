@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using TodoApi.Models;
 using TodoApi.Repositories;
 
@@ -12,25 +14,25 @@ namespace TodoApi.Services
             _repository = repository;
         }
 
-        public Todo CreateTodo(Todo todo)
+        public async Task<Todo> CreateTodoAsync(Todo todo)
         {
-            var id = _repository.Insert(todo);
+            var id = await _repository.InsertAsync(todo);
             todo.Id = id;
             todo.CreatedAt = DateTime.UtcNow;
             return todo;
         }
 
-        public List<Todo> GetAllTodos() => _repository.GetAll();
+        public Task<List<Todo>> GetAllTodosAsync() => _repository.GetAllAsync();
 
-        public Todo? GetTodoById(int id) => _repository.GetById(id);
+        public Task<Todo?> GetTodoByIdAsync(int id) => _repository.GetByIdAsync(id);
 
-        public Todo UpdateTodo(int id, Todo todo)
+        public async Task<Todo> UpdateTodoAsync(int id, Todo todo)
         {
-            _repository.Update(id, todo);
+            await _repository.UpdateAsync(id, todo);
             todo.Id = id;
             return todo;
         }
 
-        public bool DeleteTodo(int id) => _repository.Delete(id) > 0;
+        public async Task<bool> DeleteTodoAsync(int id) => (await _repository.DeleteAsync(id)) > 0;
     }
 }
